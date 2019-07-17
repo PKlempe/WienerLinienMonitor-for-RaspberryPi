@@ -22,7 +22,6 @@ optional arguments:
   -t, --time=	  refresh time in seconds (Default: 10)
 ```
 
-  </br>
 ## Photos
 ![](https://raw.githubusercontent.com/mabe-at/WL-Monitor-Pi/master/PHOTOS/photo1.jpg)
 ![](https://raw.githubusercontent.com/mabe-at/WL-Monitor-Pi/master/PHOTOS/photo2.jpg)
