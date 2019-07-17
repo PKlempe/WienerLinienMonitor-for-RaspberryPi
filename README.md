@@ -1,6 +1,6 @@
 # "Wiener Linien Monitor" for Raspberry Pi
 A Python 3 script for using your Raspberry Pi as a departure board for stations of your choice inside Vienna.
-```
+```python
 usage: python3 wl_monitor.py [-h] [-t time] -k apikey rbl [rbl ...]
 
 arguments:
@@ -15,8 +15,8 @@ optional arguments:
 * Request an API key [here](https://www.wien.gv.at/formularserver2/user/formular.aspx?pid=3b49a23de1ff43efbc45ae85faee31db&pn=B0718725a79fb40f4bb4b7e0d2d49f1d1).  
 * Get RBL numbers [here](https://till.mabe.at/rbl/).
 ### Hardware
-* Raspberry Pi                  Buy one [here](https://www.raspberrypi.org/products/).  
-* Adafruit LCD Keypad Kit       Buy one [here](https://www.adafruit.com/category/808).
+* Raspberry Pi&nbsp;&nbsp;&nbsp;Buy one [here](https://www.raspberrypi.org/products/).  
+* Adafruit LCD Keypad Kit&nbsp;&nbsp;&nbsp;Buy one [here](https://www.adafruit.com/category/808).
 
 
 ## Photos
