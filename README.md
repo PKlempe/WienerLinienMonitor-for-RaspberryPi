@@ -7,9 +7,8 @@ A Python 3 script for using your Raspberry Pi as a departure board for stations 
 ### Hardware
 * Raspberry Pi&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Buy one [here](https://www.raspberrypi.org/products/).  
 * Adafruit LCD Keypad Kit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Buy one [here](https://www.adafruit.com/category/808).
-<br/>
-<br/>
-<br/>
+&nbsp;
+
 ## Usage
 ```
 Command: python3 wl_monitor.py [-h] [-t time] -k apikey rbl [rbl ...]
