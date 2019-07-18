@@ -3,27 +3,32 @@ import sys
 import getopt
 import requests
 import time
+import threading
+import atexit
 import board
 import busio
+import digitalio
 import adafruit_character_lcd.character_lcd_rgb_i2c as character_lcd
 
 # =========== Configure and Initialize LCD screen ===========
-# Modify this if you have a different sized Character LCD
-lcd_columns = 16
-lcd_rows = 2
-
 # Initialise I2C bus.
 i2c = busio.I2C(board.SCL, board.SDA)
 
-# Initialise the LCD class
+# Set LCD dimensions
+# Modify this if you have a different sized Character LCD.
+lcd_columns = 16
+lcd_rows = 2
+
+# Create lcd object so we can speak to our screen
 lcd = character_lcd.Character_LCD_RGB_I2C(i2c, lcd_columns, lcd_rows)
 lcd.text_direction = lcd.LEFT_TO_RIGHT
 
-# Clear the LCD screen
+# Clear LCD screen
 lcd.clear()
 
-# Set LCD color
-lcd.color = [255, 0, 0]
+# Set LCD color and turn backlight on
+# Modify this if you aren't using a blue & white LCD screen.
+lcd.color = [100, 0, 0]
 time.sleep(1)
 
 
@@ -42,12 +47,13 @@ def main(argv):
 	api_url = 'https://www.wienerlinien.at/ogd_realtime/monitor?rbl={rbl}&sender={apikey}'
 	refresh_time = 10
 
+	# Parses the specified options and their arguments.
 	try:                                
-		opts, args = getopt.getopt(argv, "hk:t:", ["help", "key=", "time="])
+		options, remainder = getopt.getopt(sys.argv[1:], "hk:t:", ["help", "key=", "time="])
 	except getopt.GetoptError:   
 		usage()                         
 		sys.exit(2)                     
-	for opt, arg in opts:
+	for opt, arg in options:
 		if opt in ("-h", "--help"):   
 			usage()                     
 			sys.exit()                                    
@@ -61,20 +67,21 @@ def main(argv):
 			except ValueError:    
 				usage()
 				sys.exit(2)
-
+	
 	# Checks if an API key and at least one RBL number has been specified by the user.
 	# If not, usage message will be printed on screen and the process terminated.
-	if api_key == False or len(args) < 1:    
+	if api_key == False or len(remainder) < 1:    
 		usage()
 		sys.exit(2)
 
 	# Create for every RBL number specified an instance of our class named "RBL"
 	# and save it in an array.
 	rbl_numbers = []
-	for rbl_id in args:
+	for rbl_id in remainder:
 		tmp_rbl = RBL()
 		tmp_rbl.id = rbl_id
 		rbl_numbers.append(tmp_rbl)
+
 
 	# Endless loop for updating data as long as the process is alive.
 	while True:
@@ -97,17 +104,43 @@ def main(argv):
 			except:
 				print("Error: Something went wrong while extracting the required data. Try again...")
 
-			lcdShow(rbl)
+			lcd_show(rbl)
 		time.sleep(refresh_time)
 
 
+# Function which runs in a background thread and checks if a button has been pressed.
+def has_button_been_pressed():
+	display = True
+	while True:
+		#if lcd.left_button:
+			# Switch driving direction
+		#elif lcd.up_button:
+			# Switch station
+		#elif lcd.down_button:
+			# Switch station
+		#elif lcd.right_button:
+			# Switch driving direction
+		if lcd.select_button:
+			if display == True:
+				lcd.display = False
+				lcd.color = [0, 0, 0]
+				display = False
+			else:
+				lcd.color = [100, 0, 0]
+				lcd.display = True
+				display = True
+			time.sleep(0.2)
+
+		else:
+			time.sleep(0.1)
+
 # Function which updates the message on the lcd screen.
-def lcdShow(rbl):
-	optimizedMessage = replaceUmlaut(rbl.line + ' ' + rbl.station + '\n' + '{:0>2d}'.format(rbl.time) + ' ' + rbl.direction)
-	lcd.message = optimizedMessage
+def lcd_show(rbl):
+	optimized_message = replace_umlauts(rbl.line + ' ' + rbl.station + '\n' + '{:0>2d}'.format(rbl.time) + ' ' + rbl.direction)
+	lcd.message = optimized_message
 
 # Function which replaces all German umlauts.
-def replaceUmlaut(s):
+def replace_umlauts(s):
     s = s.replace(chr(196), "Ae") # A umlaut
     s = s.replace(chr(214), "Oe") # O umlaut
     s = s.replace(chr(220), "Ue") # U umlaut
@@ -124,11 +157,19 @@ def usage():
 	print('  -k, --key=\tAPI key')
 	print('  rbl\t\tRBL number\n')
 	print('optional arguments:')
-	print('  -h, --help\tshow this help')
-	print('  -t, --time=\ttime between station updates in seconds, default 10')
+	print('  -h, --help\tShow this help')
+	print('  -t, --time=\tRefresh time in seconds (Default: 10)')
 
+
+def cleanup():
+	lcd.clear()
+	lcd.display = False
+	lcd.color = [0, 0, 0]
 
 # Check if script is the main program and therefore wasn't called by someone else.
 # If yes, start executing main function.
 if __name__ == "__main__":
+	listener_thread = threading.Thread(target=has_button_been_pressed)
+	listener_thread.start()
+	atexit.register(cleanup)  # Function to call when process terminates.
 	main(sys.argv[1:])
