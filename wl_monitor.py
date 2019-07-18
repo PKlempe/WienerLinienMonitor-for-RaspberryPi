@@ -42,7 +42,7 @@ class RBL:
 	time = -1
 
 # The main function where all the magic happens...
-def main(argv):
+def main(argv, lcd_lock):
 	api_key = False
 	api_url = 'https://www.wienerlinien.at/ogd_realtime/monitor?rbl={rbl}&sender={apikey}'
 	refresh_time = 10
@@ -104,12 +104,12 @@ def main(argv):
 			except:
 				print("Error: Something went wrong while extracting the required data. Try again...")
 
-			lcd_show(rbl)
+			lcd_show(rbl, lcd_lock)
 		time.sleep(refresh_time)
 
 
 # Function which runs in a background thread and checks if a button has been pressed.
-def has_button_been_pressed():
+def has_button_been_pressed(lcd_lock):
 	display = True
 	while True:
 		#if lcd.left_button:
@@ -122,12 +122,16 @@ def has_button_been_pressed():
 			# Switch driving direction
 		if lcd.select_button:
 			if display == True:
-				lcd.display = False
-				lcd.color = [0, 0, 0]
+				# Access lcd object only when no one else is using it and release it afterwards.
+				with lcd_lock:
+					lcd.display = False
+					lcd.color = [0, 0, 0]
 				display = False
 			else:
-				lcd.color = [100, 0, 0]
-				lcd.display = True
+				# Access lcd object only when no one else is using it and release it afterwards.
+				with lcd_lock:
+					lcd.color = [100, 0, 0]
+					lcd.display = True
 				display = True
 			time.sleep(0.2)
 
@@ -135,9 +139,11 @@ def has_button_been_pressed():
 			time.sleep(0.1)
 
 # Function which updates the message on the lcd screen.
-def lcd_show(rbl):
+def lcd_show(rbl, lcd_lock):
 	optimized_message = replace_umlauts(rbl.line + ' ' + rbl.station + '\n' + '{:0>2d}'.format(rbl.time) + ' ' + rbl.direction)
-	lcd.message = optimized_message
+	# Access lcd object only when no one else is using it and release it afterwards.
+	with lcd_lock:
+		lcd.message = optimized_message
 
 # Function which replaces all German umlauts.
 def replace_umlauts(s):
@@ -169,7 +175,8 @@ def cleanup():
 # Check if script is the main program and therefore wasn't called by someone else.
 # If yes, start executing main function.
 if __name__ == "__main__":
-	listener_thread = threading.Thread(target=has_button_been_pressed)
+	lcd_lock = threading.Lock()
+	listener_thread = threading.Thread(target=has_button_been_pressed, args=[lcd_lock])
 	listener_thread.start()
 	atexit.register(cleanup)  # Function to call when process terminates.
-	main(sys.argv[1:])
+	main(sys.argv[1:], lcd_lock)
