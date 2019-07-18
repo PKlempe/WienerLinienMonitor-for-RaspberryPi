@@ -11,7 +11,7 @@ A Python 3 script for using your Raspberry Pi as a departure board for stations 
 
 ## Usage
 ```
-Command: python3 wl_monitor.py [-h] [-t time] -k apikey rbl [rbl ...]
+usage: ./wl_monitor.py [-h] [-t time] -k apikey rbl [rbl ...]
 
 arguments:
   -k, --key=	  API key
