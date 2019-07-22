@@ -109,8 +109,7 @@ def main(argv, lcd_lock):
 
 
 # Function which runs in a background thread and checks if a button has been pressed.
-def has_button_been_pressed(lcd_lock):
-	display = True
+def has_button_been_pressed(lcd_lock, screen_timer):
 	while True:
 		#if lcd.left_button:
 			# Switch driving direction
@@ -121,18 +120,8 @@ def has_button_been_pressed(lcd_lock):
 		#elif lcd.right_button:
 			# Switch driving direction
 		if lcd.select_button:
-			if display == True:
-				# Access lcd object only when no one else is using it and release it afterwards.
-				with lcd_lock:
-					lcd.display = False
-					lcd.color = [0, 0, 0]
-				display = False
-			else:
-				# Access lcd object only when no one else is using it and release it afterwards.
-				with lcd_lock:
-					lcd.color = [100, 0, 0]
-					lcd.display = True
-				display = True
+			screen_timer = reset_timer(screen_timer)
+			lcd_power(lcd_lock)
 			time.sleep(0.2)
 
 		else:
@@ -144,6 +133,26 @@ def lcd_show(rbl, lcd_lock):
 	# Access lcd object only when no one else is using it and release it afterwards.
 	with lcd_lock:
 		lcd.message = optimized_message
+
+# Function which turns the screen and backlight on/off
+def lcd_power(lcd_lock):
+	if lcd.display == True:
+		# Access lcd object only when no one else is using it and release it afterwards.
+		with lcd_lock:
+			lcd.display = False
+			lcd.color = [0, 0, 0]
+	else:
+		# Access lcd object only when no one else is using it and release it afterwards.
+		with lcd_lock:
+			lcd.color = [100, 0, 0]
+			lcd.display = True
+
+
+def reset_timer(screen_timer):
+	screen_timer.cancel()
+	screen_timer = threading.Timer(10.0, lcd_power, args=[lcd_lock])
+	screen_timer.start()
+	return screen_timer
 
 # Function which replaces all German umlauts.
 def replace_umlauts(s):
@@ -176,7 +185,9 @@ def cleanup():
 # If yes, start executing main function.
 if __name__ == "__main__":
 	lcd_lock = threading.Lock()
-	listener_thread = threading.Thread(target=has_button_been_pressed, args=[lcd_lock])
+	screen_timer = threading.Timer(10.0, lcd_power, args=[lcd_lock])
+	listener_thread = threading.Thread(target=has_button_been_pressed, args=[lcd_lock, screen_timer])
 	listener_thread.start()
+	screen_timer.start()
 	atexit.register(cleanup)  # Function to call when process terminates.
 	main(sys.argv[1:], lcd_lock)
