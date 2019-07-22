@@ -150,7 +150,7 @@ def lcd_power(lcd_lock):
 
 def reset_timer(screen_timer):
 	screen_timer.cancel()
-	screen_timer = threading.Timer(10.0, lcd_power, args=[lcd_lock])
+	screen_timer = threading.Timer(20.0, lcd_power, args=[lcd_lock])
 	screen_timer.start()
 	return screen_timer
 
@@ -185,7 +185,7 @@ def cleanup():
 # If yes, start executing main function.
 if __name__ == "__main__":
 	lcd_lock = threading.Lock()
-	screen_timer = threading.Timer(10.0, lcd_power, args=[lcd_lock])
+	screen_timer = threading.Timer(20.0, lcd_power, args=[lcd_lock])
 	listener_thread = threading.Thread(target=has_button_been_pressed, args=[lcd_lock, screen_timer])
 	listener_thread.start()
 	screen_timer.start()
