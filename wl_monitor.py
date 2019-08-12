@@ -33,6 +33,10 @@ time.sleep(1)
 
 
 
+# Global variables
+rbl_index = 0				# Index for selecting a specific RBL object in the array rbl_numbers[]
+rbl_amount = 1				# Amount of RBL numbers specified by the user
+
 # A simple class for storing and group the required data returned by the Wiener Linien API.
 class RBL:
 	id = 0
@@ -42,10 +46,12 @@ class RBL:
 	time = -1
 
 # The main function where all the magic happens...
-def main(argv, lcd_lock):
+def main(lcd_lock, wake_up):
 	api_key = False
 	api_url = 'https://www.wienerlinien.at/ogd_realtime/monitor?rbl={rbl}&sender={apikey}'
 	refresh_time = 10
+	cleaning = False		# Variable which indicates if the display needs to be cleared.
+	global rbl_amount		# Needed to modify global copy of rbl_amount
 
 	# Parses the specified options and their arguments.
 	try:                                
@@ -70,7 +76,8 @@ def main(argv, lcd_lock):
 	
 	# Checks if an API key and at least one RBL number has been specified by the user.
 	# If not, usage message will be printed on screen and the process terminated.
-	if api_key == False or len(remainder) < 1:    
+	rbl_amount = len(remainder)
+	if api_key == False or rbl_amount < 1:    
 		usage()
 		sys.exit(2)
 
@@ -85,42 +92,55 @@ def main(argv, lcd_lock):
 
 	# Endless loop for updating data as long as the process is alive.
 	while True:
-		for rbl in rbl_numbers:
-			url = api_url.replace('{apikey}', api_key).replace('{rbl}', rbl.id)		# Replace the placeholders in the API url with the values specified by the user.
-			response = requests.get(url)
-			try:
-				response.raise_for_status()						# Check if HTTP response code is 200.
-			except requests.exceptions.HTTPError as ex: 		# If not, throw exception and print error message.
-				print(ex)
+		if wake_up.is_set():
+			cleaning = True
+			while wake_up.is_set():
+				time.sleep(1)
 
-			# Convert response into JSON and extract required data which will then be saved in our RBL objects created before.
-			try:
-				monitor = response.json()['data']['monitors'][0]
-				line = monitor['lines'][0]
-				rbl.station = monitor['locationStop']['properties']['title']
-				rbl.line = line['name']
-				rbl.direction = line['towards']
-				rbl.time = line['departures']['departure'][0]['departureTime']['countdown']
-			except:
-				print("Error: Something went wrong while extracting the required data. Try again...")
+		rbl = rbl_numbers[rbl_index]
+		url = api_url.replace('{apikey}', api_key).replace('{rbl}', rbl.id)		# Replace the placeholders in the API url with the values specified by the user.
+		response = requests.get(url)
+		try:
+			response.raise_for_status()						# Check if HTTP response code is 200.
+		except requests.exceptions.HTTPError as ex: 		# If not, throw exception and print error message.
+			print(ex)
 
+		# Convert response into JSON and extract required data which will then be saved in our RBL objects created before.
+		try:
+			monitor = response.json()['data']['monitors'][0]
+			line = monitor['lines'][0]
+			rbl.station = monitor['locationStop']['properties']['title']
+			rbl.line = line['name']
+			rbl.direction = line['towards']
+			rbl.time = line['departures']['departure'][0]['departureTime']['countdown']
+		except:
+			print("Error: Something went wrong while extracting the required data. Try again...")
+		if cleaning == True:
+			cleaning = False
+			with lcd_lock:
+				lcd.clear()
+		if not wake_up.is_set():
 			lcd_show(rbl, lcd_lock)
-		time.sleep(refresh_time)
+		wake_up.wait(refresh_time)
 
 
 # Function which runs in a background thread and checks if a button has been pressed.
-def has_button_been_pressed(lcd_lock, screen_timer):
+def has_button_been_pressed(lcd_lock, screen_timer, wake_up):
 	while True:
-		#if lcd.left_button:
+		if lcd.down_button:
+			screen_timer = reset_timer(lcd_lock, screen_timer)
+			switch_station(False, lcd_lock, wake_up)
+			time.sleep(0.2)
+		elif lcd.up_button:
+			screen_timer = reset_timer(lcd_lock, screen_timer)
+			switch_station(True, lcd_lock, wake_up)
+			time.sleep(0.2)
+		#elif lcd.left_button:
 			# Switch driving direction
-		#elif lcd.up_button:
-			# Switch station
-		#elif lcd.down_button:
-			# Switch station
 		#elif lcd.right_button:
 			# Switch driving direction
-		if lcd.select_button:
-			screen_timer = reset_timer(screen_timer)
+		elif lcd.select_button:
+			screen_timer = reset_timer(lcd_lock, screen_timer)
 			lcd_power(lcd_lock)
 			time.sleep(0.2)
 
@@ -134,7 +154,7 @@ def lcd_show(rbl, lcd_lock):
 	with lcd_lock:
 		lcd.message = optimized_message
 
-# Function which turns the screen and backlight on/off
+# Function which turns the screen and backlight on/off.
 def lcd_power(lcd_lock):
 	if lcd.display == True:
 		# Access lcd object only when no one else is using it and release it afterwards.
@@ -147,8 +167,24 @@ def lcd_power(lcd_lock):
 			lcd.color = [100, 0, 0]
 			lcd.display = True
 
+# Function which switches between the stations specified by the user.
+def switch_station(op, lcd_lock, wake_up):
+	wake_up.set()
+	global rbl_index
+	with lcd_lock:
+		lcd.clear()
+		lcd.message = "Switching\n   Station..."
+	if op == True:
+		rbl_index += 1
+	else:
+		rbl_index -= 1
+	if rbl_index < 0:
+		rbl_index = rbl_amount - 1
+	elif rbl_index >= rbl_amount:
+		rbl_index = 0
+	wake_up.clear()
 
-def reset_timer(screen_timer):
+def reset_timer(lcd_lock, screen_timer):
 	screen_timer.cancel()
 	screen_timer = threading.Timer(20.0, lcd_power, args=[lcd_lock])
 	screen_timer.start()
@@ -184,10 +220,11 @@ def cleanup():
 # Check if script is the main program and therefore wasn't called by someone else.
 # If yes, start executing main function.
 if __name__ == "__main__":
-	lcd_lock = threading.Lock()
+	lcd_lock = threading.Lock()		# Mutex lock to ensure that only one thread at a time can have access to the display
+	wake_up = threading.Event()		# Object for waking up the main thread to prevent waiting for the refresh time to run out
 	screen_timer = threading.Timer(20.0, lcd_power, args=[lcd_lock])
-	listener_thread = threading.Thread(target=has_button_been_pressed, args=[lcd_lock, screen_timer])
+	listener_thread = threading.Thread(target=has_button_been_pressed, args=[lcd_lock, screen_timer, wake_up])
 	listener_thread.start()
 	screen_timer.start()
-	atexit.register(cleanup)  # Function to call when process terminates.
-	main(sys.argv[1:], lcd_lock)
+	atexit.register(cleanup)		# Function to call when process terminates.
+	main(lcd_lock, wake_up)
