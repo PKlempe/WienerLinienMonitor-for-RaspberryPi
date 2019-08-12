@@ -232,13 +232,15 @@ def replace_umlauts(s):
 
 # Function which prints a usage/help message for this script.
 def usage():
-	print('usage: ' + __file__ + ' [-h] [-t time] -k apikey rbl [rbl ...]\n')
+	print('\nusage:')
+	print('  ' + __file__ + ' [-h] [-t time] -k apikey rbl[:rbl] [rbl[:rbl]...]\n')
 	print('arguments:')
 	print('  -k, --key=\tAPI key')
 	print('  rbl\t\tRBL number\n')
 	print('optional arguments:')
 	print('  -h, --help\tShow this help')
-	print('  -t, --time=\tRefresh time in seconds (Default: 10)')
+	print('  -t, --time=\tRefresh time in seconds (Default: 10)\n')
+	print("example:  wl_monitor.py -t 5 -k xxxxxxxx 232:222 18:46 525")
 
 
 def cleanup():
