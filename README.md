@@ -6,7 +6,7 @@ A Python 3 script for using your Raspberry Pi as a departure board for stations 
 * Get RBL numbers [here](https://till.mabe.at/rbl/).  (Special thanks to @mabe-at)
 ### Software
 * Python 3 (pre installed)
-* Adafruit CircuitPython&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- [GitHub Repo](https://github.com/adafruit/Adafruit_CircuitPython_CharLCD).
+* Adafruit CircuitPython&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- [GitHub Repo](https://github.com/adafruit/Adafruit_CircuitPython_CharLCD).
 
 `sudo pip3 install adafruit-circuitpython-charlcd`
 ### Hardware
