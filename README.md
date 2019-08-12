@@ -6,7 +6,8 @@ A Python 3 script for using your Raspberry Pi as a departure board for stations 
 * Get RBL numbers [here](https://till.mabe.at/rbl/).  (Special thanks to @mabe-at)
 ### Software
 * Python 3 (pre installed)
-* Adafruit CircuitPython&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- [GitHub Repo](https://github.com/adafruit/Adafruit_CircuitPython_CharLCD).
+* Adafruit CircuitPython&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- [GitHub Repo](https://github.com/adafruit/Adafruit_CircuitPython_CharLCD).
+
 `sudo pip3 install adafruit-circuitpython-charlcd`
 ### Hardware
 * Raspberry Pi&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Buy one [here](https://www.raspberrypi.org/products/).  
@@ -32,8 +33,8 @@ example:  wl_monitor.py -t 5 -k xxxxxxxx 232:222 18:46 525
 
 
 ## Documentation
-* [Wiener Linien API documentation](http://data.wien.gv.at/pdf/wienerlinien-echtzeitdaten-dokumentation.pdf)
-* [Adafruit CircuitPython documentation](https://circuitpython.readthedocs.io/projects/charlcd/en/latest)
+* [Wiener Linien API](http://data.wien.gv.at/pdf/wienerlinien-echtzeitdaten-dokumentation.pdf)
+* [Adafruit CircuitPython](https://circuitpython.readthedocs.io/projects/charlcd/en/latest)
 
 ## Photos
 | ![IMG_20190718_131042](https://user-images.githubusercontent.com/49726903/61454600-9d731e80-a961-11e9-85e0-5984d34a59e4.jpg) | ![IMG_20190718_131552](https://user-images.githubusercontent.com/49726903/61454625-ad8afe00-a961-11e9-9af5-cc08c08a1497.jpg) |
