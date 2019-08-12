@@ -34,8 +34,10 @@ time.sleep(1)
 
 
 # Global variables
-rbl_index = 0				# Index for selecting a specific RBL object in the array rbl_numbers[]
-rbl_amount = 1				# Amount of RBL numbers specified by the user
+rbl_index = 0				# Index for selecting a specific RBL object in the array rbl_numbers[].
+rbl_direction = False		# Bool for switching between the two RBL numbers of a station.
+rbl_amount = 1				# Amount of stations specified by the user.
+rbl_numbers = []			# Array which contains all the RBL objects.
 
 # A simple class for storing and group the required data returned by the Wiener Linien API.
 class RBL:
@@ -52,6 +54,7 @@ def main(lcd_lock, wake_up):
 	refresh_time = 10
 	cleaning = False		# Variable which indicates if the display needs to be cleared.
 	global rbl_amount		# Needed to modify global copy of rbl_amount
+	global rbl_numbers		# Needed to modify global copy of rbl_numbers
 
 	# Parses the specified options and their arguments.
 	try:                                
@@ -83,11 +86,18 @@ def main(lcd_lock, wake_up):
 
 	# Create for every RBL number specified an instance of our class named "RBL"
 	# and save it in an array.
-	rbl_numbers = []
-	for rbl_id in remainder:
-		tmp_rbl = RBL()
-		tmp_rbl.id = rbl_id
-		rbl_numbers.append(tmp_rbl)
+	for rbl in remainder:
+		if ":" in rbl:					# Check if a RBL number for the other direction has been specified.
+			split = rbl.split(":")
+			for i in range (0, 2):
+				tmp_rbl = RBL()
+				tmp_rbl.id = split[i]
+				split[i] = tmp_rbl
+			rbl_numbers.append(split)
+		else:
+			tmp_rbl = RBL()
+			tmp_rbl.id = rbl
+			rbl_numbers.append(tmp_rbl)
 
 
 	# Endless loop for updating data as long as the process is alive.
@@ -96,8 +106,11 @@ def main(lcd_lock, wake_up):
 			cleaning = True
 			while wake_up.is_set():
 				time.sleep(1)
-
-		rbl = rbl_numbers[rbl_index]
+		
+		if isinstance(rbl_numbers[rbl_index], list):
+			rbl = rbl_numbers[rbl_index][int(rbl_direction)]
+		else:
+			rbl = rbl_numbers[rbl_index]
 		url = api_url.replace('{apikey}', api_key).replace('{rbl}', rbl.id)		# Replace the placeholders in the API url with the values specified by the user.
 		response = requests.get(url)
 		try:
@@ -129,21 +142,20 @@ def has_button_been_pressed(lcd_lock, screen_timer, wake_up):
 	while True:
 		if lcd.down_button:
 			screen_timer = reset_timer(lcd_lock, screen_timer)
-			switch_station(False, lcd_lock, wake_up)
+			switch_station(False, False, lcd_lock, wake_up)
 			time.sleep(0.2)
 		elif lcd.up_button:
 			screen_timer = reset_timer(lcd_lock, screen_timer)
-			switch_station(True, lcd_lock, wake_up)
+			switch_station(False, True, lcd_lock, wake_up)
 			time.sleep(0.2)
-		#elif lcd.left_button:
-			# Switch driving direction
-		#elif lcd.right_button:
-			# Switch driving direction
+		elif lcd.left_button or lcd.right_button:
+			screen_timer = reset_timer(lcd_lock, screen_timer)
+			switch_station(True, False, lcd_lock, wake_up)
+			time.sleep(0.2)
 		elif lcd.select_button:
 			screen_timer = reset_timer(lcd_lock, screen_timer)
 			lcd_power(lcd_lock)
 			time.sleep(0.2)
-
 		else:
 			time.sleep(0.1)
 
@@ -167,21 +179,38 @@ def lcd_power(lcd_lock):
 			lcd.color = [100, 0, 0]
 			lcd.display = True
 
-# Function which switches between the stations specified by the user.
-def switch_station(op, lcd_lock, wake_up):
+# Function which switches between the stations or directions specified by the user.
+def switch_station(direction, station, lcd_lock, wake_up):
 	wake_up.set()
 	global rbl_index
-	with lcd_lock:
-		lcd.clear()
-		lcd.message = "Switching\n   Station..."
-	if op == True:
-		rbl_index += 1
+	global rbl_direction
+	if direction == False:
+		with lcd_lock:
+			lcd.clear()
+			lcd.message = "Switching\n   Station..."
+		if station == True:
+			rbl_index += 1
+		else:
+			rbl_index -= 1
+		if rbl_index < 0:
+			rbl_index = rbl_amount - 1
+		elif rbl_index >= rbl_amount:
+			rbl_index = 0
+		rbl_direction = 0
 	else:
-		rbl_index -= 1
-	if rbl_index < 0:
-		rbl_index = rbl_amount - 1
-	elif rbl_index >= rbl_amount:
-		rbl_index = 0
+		if isinstance(rbl_numbers[rbl_index], list):
+			with lcd_lock:
+				lcd.clear()
+				lcd.message = "Switching\n   Direction..."
+			if rbl_direction == True:
+				rbl_direction = False
+			else:
+				rbl_direction = True
+		else:
+			with lcd_lock:
+				lcd.clear()
+				lcd.message = "No other direc-\ntion specified."
+				time.sleep(2)
 	wake_up.clear()
 
 def reset_timer(lcd_lock, screen_timer):
