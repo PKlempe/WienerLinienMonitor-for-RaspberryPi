@@ -37,6 +37,7 @@ def initialize_display(lcd_lock, wake_up):
 	# Initialize and start the listener thread and the timer for turning the display off.
 	screen_timer = threading.Timer(20.0, lcd_power, args=[lcd_lock])
 	listener_thread = threading.Thread(target=has_button_been_pressed, args=[lcd_lock, screen_timer, wake_up])
+	listener_thread.daemon = True		# Set daemon flag so that this thread terminates after the main one does.
 	screen_timer.start()
 	listener_thread.start()
 
